@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>PharmaCRM - PDV</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/pdv.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="pdv-page">
+    <div class="pdv-container">
+        <!-- PDV Header -->
+        <header class="pdv-header">
+            <div class="pdv-title">
+                <h1>Ponto de Venda</h1>
+                <div class="pdv-clock" id="pdv-clock">00:00:00</div>
+            </div>
+            <div class="pdv-user">
+                <span id="pdv-user-name">Usuário</span>
+                <button id="pdv-exit-button" class="btn btn-sm btn-outline">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </button>
+            </div>
+        </header>
+        
+        <!-- PDV Content -->
+        <div class="pdv-content">
+            <!-- Left Section: Search and Products -->
+            <div class="pdv-left-section">
+                <!-- Product Search -->
+                <div class="pdv-search-container">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="pdv-product-search" placeholder="Buscar produto (F3)" autofocus>
+                    </div>
+                    <button id="pdv-barcode-btn" class="btn btn-primary">
+                        <i class="fas fa-barcode"></i> Código (F4)
+                    </button>
+                </div>
+                
+                <!-- Products List -->
+                <div class="pdv-products-container">
+                    <div class="pdv-products-header">
+                        <h3>Resultados da Busca</h3>
+                        <span class="pdv-products-count" id="pdv-products-count">0 produtos</span>
+                    </div>
+                    <div class="pdv-products-list" id="pdv-products-list">
+                        <!-- Products will be loaded here -->
+                        <div class="pdv-empty-message">
+                            Busque um produto pelo nome ou código de barras
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Section: Cart and Checkout -->
+            <div class="pdv-right-section">
+                <!-- Client Selection -->
+                <div class="pdv-client-container">
+                    <div class="pdv-client-header">
+                        <h3>Cliente</h3>
+                        <button id="pdv-client-search-btn" class="btn btn-sm btn-primary">
+                            <i class="fas fa-search"></i> Buscar (F2)
+                        </button>
+                    </div>
+                    <div class="pdv-client-info" id="pdv-client-info">
+                        <div class="pdv-client-placeholder">
+                            <i class="fas fa-user-circle"></i>
+                            <span>Cliente não selecionado</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Shopping Cart -->
+                <div class="pdv-cart-container">
+                    <div class="pdv-cart-header">
+                        <h3>Carrinho</h3>
+                        <button id="pdv-clear-cart-btn" class="btn btn-sm btn-danger" disabled>
+                            <i class="fas fa-trash"></i> Limpar
+                        </button>
+                    </div>
+                    <div class="pdv-cart-items" id="pdv-cart-items">
+                        <!-- Cart items will be loaded here -->
+                        <div class="pdv-empty-message">
+                            Nenhum item no carrinho
+                        </div>
+                    </div>
+                    
+                    <!-- Cart Summary -->
+                    <div class="pdv-cart-summary">
+                        <div class="pdv-summary-row">
+                            <span>Subtotal:</span>
+                            <span id="pdv-subtotal">R$ 0,00</span>
+                        </div>
+                        <div class="pdv-summary-row">
+                            <span>Desconto:</span>
+                            <div class="pdv-discount-input">
+                                <input type="number" id="pdv-discount" min="0" step="0.01" value="0">
+                            </div>
+                        </div>
+                        <div class="pdv-summary-row pdv-total-row">
+                            <span>Total:</span>
+                            <span id="pdv-total">R$ 0,00</span>
+                        </div>
+                        <button id="pdv-checkout-btn" class="btn btn-success btn-block" disabled>
+                            <i class="fas fa-check-circle"></i> Finalizar Venda (F8)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- PDV Footer with Shortcuts -->
+        <footer class="pdv-footer">
+            <div class="pdv-shortcuts">
+                <div class="pdv-shortcut">
+                    <span class="pdv-shortcut-key">F1</span>
+                    <span class="pdv-shortcut-desc">Ajuda</span>
+                </div>
+                <div class="pdv-shortcut">
+                    <span class="pdv-shortcut-key">F2</span>
+                    <span class="pdv-shortcut-desc">Cliente</span>
+                </div>
+                <div class="pdv-shortcut">
+                    <span class="pdv-shortcut-key">F3</span>
+                    <span class="pdv-shortcut-desc">Produto</span>
+                </div>
+                <div class="pdv-shortcut">
+                    <span class="pdv-shortcut-key">F4</span>
+                    <span class="pdv-shortcut-desc">Código</span>
+                </div>
+                <div class="pdv-shortcut">
+                    <span class="pdv-shortcut-key">F5</span>
+                    <span class="pdv-shortcut-desc">Atualizar</span>
+                </div>
+                <div class="pdv-shortcut">
+                    <span class="pdv-shortcut-key">F6</span>
+                    <span class="pdv-shortcut-desc">Desconto</span>
+                </div>
+                <div class="pdv-shortcut">
+                    <span class="pdv-shortcut-key">F7</span>
+                    <span class="pdv-shortcut-desc">Remover Item</span>
+                </div>
+                <div class="pdv-shortcut">
+                    <span class="pdv-shortcut-key">F8</span>
+                    <span class="pdv-shortcut-desc">Finalizar</span>
+                </div>
+                <div class="pdv-shortcut">
+                    <span class="pdv-shortcut-key">Esc</span>
+                    <span class="pdv-shortcut-desc">Cancelar</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- Client Search Modal -->
+    <div class="modal" id="client-search-modal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3>Buscar Cliente</h3>
+                <button class="modal-close" id="close-client-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="search-box mb-3">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="client-search-input" placeholder="Buscar por nome ou telefone">
+                </div>
+                <div class="client-list" id="client-search-results">
+                    <!-- Clients will be loaded here -->
+                    <div class="pdv-empty-message">
+                        Digite para buscar um cliente
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="cancel-client-search">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Checkout Modal -->
+    <div class="modal" id="checkout-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Finalizar Venda</h3>
+                <button class="modal-close" id="close-checkout-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Forma de Pagamento</label>
+                    <div class="payment-methods-grid">
+                        <div class="payment-method-option" data-method="dinheiro">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <span>Dinheiro</span>
+                        </div>
+                        <div class="payment-method-option" data-method="credito">
+                            <i class="fas fa-credit-card"></i>
+                            <span>Crédito</span>
+                        </div>
+                        <div class="payment-method-option" data-method="debito">
+                            <i class="fas fa-credit-card"></i>
+                            <span>Débito</span>
+                        </div>
+                        <div class="payment-method-option" data-method="pix">
+                            <i class="fas fa-qrcode"></i>
+                            <span>PIX</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="cash-payment-section" class="form-group">
+                    <label for="payment-amount">Valor Recebido (R$)</label>
+                    <input type="number" id="payment-amount" class="form-control" min="0" step="0.01">
+                    <div class="payment-change mt-2">
+                        <span>Troco:</span>
+                        <span id="payment-change">R$ 0,00</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="payment-notes">Observações</label>
+                    <textarea id="payment-notes" class="form-control" rows="2"></textarea>
+                </div>
+                
+                <div class="checkout-summary">
+                    <div class="checkout-summary-item">
+                        <span>Subtotal:</span>
+                        <span id="checkout-subtotal">R$ 0,00</span>
+                    </div>
+                    <div class="checkout-summary-item">
+                        <span>Desconto:</span>
+                        <span id="checkout-discount">R$ 0,00</span>
+                    </div>
+                    <div class="checkout-summary-item checkout-summary-total">
+                        <span>Total:</span>
+                        <span id="checkout-total">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="cancel-checkout">Cancelar</button>
+                <button class="btn btn-success" id="confirm-checkout">Confirmar Pagamento</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Allergy Warning Modal -->
+    <div class="modal" id="allergy-warning-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="text-danger"><i class="fas fa-exclamation-triangle"></i> Alerta de Alergia</h3>
+                <button class="modal-close" id="close-allergy-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="allergy-warning-message">O cliente selecionado possui alergia a este medicamento.</p>
+                <p class="mt-2">Produto: <strong id="allergy-product-name"></strong></p>
+                <p class="text-danger mt-3">Deseja continuar com a venda mesmo assim?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="cancel-allergy-add">Cancelar</button>
+                <button class="btn btn-danger" id="confirm-allergy-add">Adicionar Mesmo Assim</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Help Modal -->
+    <div class="modal" id="help-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-question-circle"></i> Ajuda do PDV</h3>
+                <button class="modal-close" id="close-help-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h4>Atalhos de Teclado</h4>
+                <div class="help-shortcuts">
+                    <div class="help-shortcut">
+                        <span class="help-shortcut-key">F1</span>
+                        <span class="help-shortcut-desc">Abre esta tela de ajuda</span>
+                    </div>
+                    <div class="help-shortcut">
+                        <span class="help-shortcut-key">F2</span>
+                        <span class="help-shortcut-desc">Abre a busca de clientes</span>
+                    </div>
+                    <div class="help-shortcut">
+                        <span class="help-shortcut-key">F3</span>
+                        <span class="help-shortcut-desc">Foca na busca de produtos</span>
+                    </div>
+                    <div class="help-shortcut">
+                        <span class="help-shortcut-key">F4</span>
+                        <span class="help-shortcut-desc">Abre o leitor de código de barras</span>
+                    </div>
+                    <div class="help-shortcut">
+                        <span class="help-shortcut-key">F5</span>
+                        <span class="help-shortcut-desc">Atualiza a página</span>
+                    </div>
+                    <div class="help-shortcut">
+                        <span class="help-shortcut-key">F6</span>
+                        <span class="help-shortcut-desc">Foca no campo de desconto</span>
+                    </div>
+                    <div class="help-shortcut">
+                        <span class="help-shortcut-key">F7</span>
+                        <span class="help-shortcut-desc">Remove o item selecionado do carrinho</span>
+                    </div>
+                    <div class="help-shortcut">
+                        <span class="help-shortcut-key">F8</span>
+                        <span class="help-shortcut-desc">Finaliza a venda</span>
+                    </div>
+                    <div class="help-shortcut">
+                        <span class="help-shortcut-key">Esc</span>
+                        <span class="help-shortcut-desc">Cancela a operação atual ou fecha o modal</span>
+                    </div>
+                    <div class="help-shortcut">
+                        <span class="help-shortcut-key">+</span>
+                        <span class="help-shortcut-desc">Aumenta a quantidade do item selecionado</span>
+                    </div>
+                    <div class="help-shortcut">
+                        <span class="help-shortcut-key">-</span>
+                        <span class="help-shortcut-desc">Diminui a quantidade do item selecionado</span>
+                    </div>
+                </div>
+                
+                <h4 class="mt-4">Instruções Gerais</h4>
+                <ul class="help-instructions">
+                    <li>Clique duas vezes em um produto para adicioná-lo ao carrinho</li>
+                    <li>Use o campo de desconto para aplicar descontos em reais</li>
+                    <li>Selecione um cliente para registrar a venda ou oferecer condições especiais</li>
+                    <li>Alertas de alergia serão exibidos quando o cliente tiver alergia registrada a um medicamento</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="close-help">Entendi</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Exit Fullscreen Modal -->
+    <div class="modal" id="exit-fullscreen-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Sair do PDV</h3>
+                <button class="modal-close" id="close-exit-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Digite a senha de administrador para sair do PDV:</p>
+                <div class="form-group">
+                    <input type="password" id="admin-password" class="form-control" placeholder="Senha de administrador">
+                </div>
+                <div id="exit-error" class="error-message"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="cancel-exit">Cancelar</button>
+                <button class="btn btn-primary" id="confirm-exit">Confirmar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Carregando...</p>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/database.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/pdv.js"></script>
+</body>
+</html>

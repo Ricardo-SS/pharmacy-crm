@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>PharmaCRM - Dashboard</title>
+    <link rel="stylesheet" href="./css/styles.css">
+    <link rel="stylesheet" href="./css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2 class="sidebar-logo">PharmaCRM</h2>
+                <p class="sidebar-subtitle">Sistema de Gestão</p>
+            </div>
+            
+            <div class="sidebar-user">
+                <div class="sidebar-user-avatar">
+                    <span id="user-initial"></span>
+                </div>
+                <p class="sidebar-user-name" id="user-name"></p>
+                <p class="sidebar-user-role" id="user-role"></p>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <ul class="sidebar-menu" id="sidebar-menu">
+                    <li class="sidebar-menu-item active" data-page="dashboard">
+                        <a href="#dashboard"><i class="fas fa-home"></i> Dashboard</a>
+                    </li>
+                    <li class="sidebar-menu-item" data-page="clientes">
+                        <a href="#clientes"><i class="fas fa-users"></i> Clientes</a>
+                    </li>
+                    <li class="sidebar-menu-item" data-page="produtos">
+                        <a href="#produtos"><i class="fas fa-box"></i> Produtos</a>
+                    </li>
+                    <li class="sidebar-menu-item" data-page="pdv">
+                        <a href="#pdv"><i class="fas fa-shopping-cart"></i> PDV</a>
+                    </li>
+                    <li class="sidebar-menu-item" data-page="caixa">
+                        <a href="#caixa"><i class="fas fa-dollar-sign"></i> Caixa</a>
+                    </li>
+                    <li class="sidebar-menu-item" data-page="relatorios">
+                        <a href="#relatorios"><i class="fas fa-chart-bar"></i> Relatórios</a>
+                    </li>
+                    <li class="sidebar-menu-item" data-page="configuracoes">
+                        <a href="#configuracoes"><i class="fas fa-cog"></i> Configurações</a>
+                    </li>
+                </ul>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button id="logout-button" class="btn btn-ghost">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </button>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Top Bar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button id="sidebar-toggle" class="btn btn-icon">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="search-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="search" placeholder="Buscar no sistema..." class="search-input">
+                    </div>
+                </div>
+                
+                <div class="topbar-right">
+                    <div class="topbar-info">
+                        <p class="topbar-welcome">Bem-vindo de volta!</p>
+                        <p class="topbar-date" id="current-date"></p>
+                    </div>
+                    
+                    <div class="topbar-notifications">
+                        <div class="dropdown">
+                            <button class="btn btn-icon notification-btn" id="notification-btn">
+                                <i class="fas fa-bell"></i>
+                                <span class="notification-badge" id="notification-count">0</span>
+                            </button>
+                            <div class="dropdown-menu" id="notification-menu">
+                                <div class="dropdown-header">
+                                    <h4>Notificações</h4>
+                                </div>
+                                <div class="dropdown-content" id="notification-content">
+                                    <div class="empty-notifications">Nenhuma notificação</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Page Content -->
+            <main class="page-content" id="page-content">
+                <!-- Dashboard content will be loaded here -->
+                <div id="dashboard-page" class="page active">
+                    <div class="page-header">
+                        <h1>Dashboard</h1>
+                        <p class="page-description">Bem-vindo ao Sistema de Gestão para Farmácias</p>
+                    </div>
+                    
+                    <div class="info-cards">
+                        <div class="info-card">
+                            <div class="info-card-content">
+                                <div>
+                                    <p class="info-card-title">Total de Clientes</p>
+                                    <h3 class="info-card-value" id="total-clientes">0</h3>
+                                    <p class="info-card-description">Clientes cadastrados</p>
+                                </div>
+                                <div class="info-card-icon blue">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                            </div>
+                            <div class="info-card-trend">+5% em 30 dias</div>
+                        </div>
+                        
+                        <div class="info-card">
+                            <div class="info-card-content">
+                                <div>
+                                    <p class="info-card-title">Produtos</p>
+                                    <h3 class="info-card-value" id="total-produtos">0</h3>
+                                    <p class="info-card-description">Produtos no catálogo</p>
+                                </div>
+                                <div class="info-card-icon green">
+                                    <i class="fas fa-box"></i>
+                                </div>
+                            </div>
+                            <div class="info-card-trend">+12 produtos novos</div>
+                        </div>
+                        
+                        <div class="info-card">
+                            <div class="info-card-content">
+                                <div>
+                                    <p class="info-card-title">Vendas de Hoje</p>
+                                    <h3 class="info-card-value" id="vendas-hoje">0</h3>
+                                    <p class="info-card-description" id="receita-hoje">R$ 0,00</p>
+                                </div>
+                                <div class="info-card-icon purple">
+                                    <i class="fas fa-shopping-bag"></i>
+                                </div>
+                            </div>
+                            <div class="info-card-trend">+2% que ontem</div>
+                        </div>
+                        
+                        <div class="info-card">
+                            <div class="info-card-content">
+                                <div>
+                                    <p class="info-card-title">Alertas</p>
+                                    <h3 class="info-card-value" id="total-alertas">0</h3>
+                                    <p class="info-card-description">Produtos com estoque baixo</p>
+                                </div>
+                                <div class="info-card-icon red">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                </div>
+                            </div>
+                            <div class="info-card-trend">Ação necessária</div>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-tabs">
+                        <div class="tabs">
+                            <div class="tab-list">
+                                <button class="tab-button active" data-tab="vendas">Vendas</button>
+                                <button class="tab-button" data-tab="alertas">Alertas</button>
+                            </div>
+                            
+                            <div class="tab-content">
+                                <div class="tab-pane active" id="vendas-tab">
+                                    <div class="dashboard-charts">
+                                        <div class="chart-card large">
+                                            <div class="card-header">
+                                                <h3 class="card-title">
+                                                    <i class="fas fa-chart-line"></i>
+                                                    Desempenho de Vendas
+                                                </h3>
+                                            </div>
+                                            <div class="card-content">
+                                                <div id="sales-chart" class="chart"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="chart-card">
+                                            <div class="card-header">
+                                                <h3 class="card-title">
+                                                    <i class="fas fa-credit-card"></i>
+                                                    Métodos de Pagamento
+                                                </h3>
+                                            </div>
+                                            <div class="card-content">
+                                                <div class="payment-methods">
+                                                    <div class="payment-method">
+                                                        <div class="payment-method-header">
+                                                            <span>Cartão de Crédito</span>
+                                                            <span>65%</span>
+                                                        </div>
+                                                        <div class="progress-bar">
+                                                            <div class="progress" style="width: 65%"></div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="payment-method">
+                                                        <div class="payment-method-header">
+                                                            <span>Dinheiro</span>
+                                                            <span>20%</span>
+                                                        </div>
+                                                        <div class="progress-bar">
+                                                            <div class="progress" style="width: 20%"></div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="payment-method">
+                                                        <div class="payment-method-header">
+                                                            <span>Pix</span>
+                                                            <span>15%</span>
+                                                        </div>
+                                                        <div class="progress-bar">
+                                                            <div class="progress" style="width: 15%"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="tab-pane" id="alertas-tab">
+                                    <div class="dashboard-alerts">
+                                        <div class="alert-card">
+                                            <div class="card-header">
+                                                <h3 class="card-title">
+                                                    <i class="fas fa-exclamation-triangle"></i>
+                                                    Produtos com Estoque Baixo
+                                                </h3>
+                                            </div>
+                                            <div class="card-content" id="low-stock-content">
+                                                <!-- Low stock alerts will be loaded here -->
+                                                <div class="empty-alert">Carregando...</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="alert-card">
+                                            <div class="card-header">
+                                                <h3 class="card-title">
+                                                    <i class="fas fa-calendar"></i>
+                                                    Aniversariantes do Mês
+                                                </h3>
+                                            </div>
+                                            <div class="card-content" id="birthday-content">
+                                                <!-- Birthday alerts will be loaded here -->
+                                                <div class="empty-alert">Carregando...</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Other pages will be loaded dynamically -->
+                <div id="clientes-page" class="page"></div>
+                <div id="produtos-page" class="page"></div>
+                <div id="pdv-page" class="page"></div>
+                <div id="caixa-page" class="page"></div>
+                <div id="relatorios-page" class="page"></div>
+                <div id="configuracoes-page" class="page"></div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Fullscreen Exit Modal -->
+    <div class="modal" id="exit-fullscreen-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Sair do Modo Tela Cheia</h3>
+                <button class="modal-close" id="close-exit-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Digite a senha de administrador para sair do modo tela cheia:</p>
+                <div class="form-group">
+                    <input type="password" id="admin-password" class="form-control" placeholder="Senha de administrador">
+                </div>
+                <div id="exit-error" class="error-message"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="cancel-exit">Cancelar</button>
+                <button class="btn btn-primary" id="confirm-exit">Confirmar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Carregando...</p>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="./js/utils.js"></script>
+    <script src="./js/database.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/ui.js"></script>
+    <script src="./js/notifications.js"></script>
+    <script src="./js/dashboard.js"></script>
+    <script src="./js/router.js"></script>
+    <script src="./js/app.js"></script>
+</body>
+</html>
