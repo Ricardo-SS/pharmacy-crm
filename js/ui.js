@@ -275,23 +275,3 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Make UI available globally
 window.ui = ui
-
-// Adicionar toggle da sidebar
-// Toggle sidebar
-document.getElementById('sidebar-toggle').addEventListener('click', (e) => {
-  e.stopPropagation();
-  const sidebar = document.getElementById('sidebar');
-  sidebar.classList.toggle('active');
-});
-
-// Close sidebar on click outside
-document.addEventListener('click', (e) => {
-  const sidebar = document.getElementById('sidebar');
-  const mainContent = document.querySelector('.main-content');
-  
-  if (sidebar.classList.contains('active') && 
-      !e.target.closest('.sidebar') && 
-      !e.target.closest('#sidebar-toggle')) {
-    sidebar.classList.remove('active');
-  }
-});

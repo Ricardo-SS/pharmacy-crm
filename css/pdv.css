@@ -672,30 +672,3 @@
     justify-content: center;
   }
 }
-
-@media (max-width: 576px) {
-  .pdv-content {
-    flex-direction: column;
-    padding: 0.5rem;
-  }
-  
-  .pdv-left-section, .pdv-right-section {
-    min-width: 100%;
-  }
-  
-  .pdv-search-container {
-    flex-direction: column;
-  }
-  
-  .pdv-shortcuts {
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    padding: 0.25rem;
-  }
-  
-  .pdv-product-item, .pdv-cart-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-}
