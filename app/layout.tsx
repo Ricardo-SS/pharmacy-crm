@@ -18,6 +18,32 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  // Verificar se está na página de login
+  const isLoginPage = typeof window !== "undefined" && window.location.pathname === "/login"
+
+  // Se não estiver na página de login, verificar se o usuário está logado
+  if (!isLoginPage && typeof window !== "undefined") {
+    const usuarioLogado = localStorage.getItem("usuarioLogado")
+    if (!usuarioLogado) {
+      // Redirecionar para a página de login
+      window.location.href = "/login"
+      return null
+    }
+  }
+
+  // Se estiver na página de login, não mostrar o layout completo
+  if (isLoginPage) {
+    return (
+      <html lang="pt-BR">
+        <body className={`${inter.className} bg-gray-50`}>
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+            {children}
+          </ThemeProvider>
+        </body>
+      </html>
+    )
+  }
+
   return (
     <html lang="pt-BR">
       <body className={`${inter.className} bg-gray-50`}>

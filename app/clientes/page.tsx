@@ -11,7 +11,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
-import { PlusCircle, Search, Users, AlertTriangle, CreditCard, PencilLine, Trash2, Phone, Mail } from "lucide-react"
+import {
+  PlusCircle,
+  Search,
+  Users,
+  AlertTriangle,
+  CreditCard,
+  PencilLine,
+  Trash2,
+  Phone,
+  Mail,
+  Loader2,
+} from "lucide-react"
 
 export default function ClientesPage() {
   const { toast } = useToast()
@@ -23,11 +34,14 @@ export default function ClientesPage() {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [clienteToDelete, setClienteToDelete] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState("")
   const [activeTab, setActiveTab] = useState("todos")
+  const [usuarioLogado, setUsuarioLogado] = useState(null)
 
   const [formData, setFormData] = useState({
     id: "",
     nome: "",
+    cpf: "",
     telefone: "",
     email: "",
     endereco: "",
@@ -38,9 +52,14 @@ export default function ClientesPage() {
     tipoCliente: "normal",
     dataCadastro: "",
     alergias: "",
+    medicamentosRecorrentes: [],
   })
 
   useEffect(() => {
+    // Verificar usuário logado
+    const usuario = JSON.parse(localStorage.getItem("usuarioLogado") || "null")
+    setUsuarioLogado(usuario)
+
     // Carregar clientes do localStorage
     const storedClientes = JSON.parse(localStorage.getItem("clientes") || "[]")
     setClientes(storedClientes)
@@ -81,6 +100,7 @@ export default function ClientesPage() {
     setFormData({
       id: "",
       nome: "",
+      cpf: "",
       telefone: "",
       email: "",
       endereco: "",
@@ -91,6 +111,7 @@ export default function ClientesPage() {
       tipoCliente: "normal",
       dataCadastro: "",
       alergias: "",
+      medicamentosRecorrentes: [],
     })
   }
 
@@ -112,50 +133,71 @@ export default function ClientesPage() {
   const executeDelete = () => {
     if (!clienteToDelete) return
 
-    const updatedClientes = clientes.filter((c) => c.id !== clienteToDelete.id)
-    setClientes(updatedClientes)
-    localStorage.setItem("clientes", JSON.stringify(updatedClientes))
+    // Verificar se o usuário é administrador
+    if (!usuarioLogado || usuarioLogado.cargo.toLowerCase() !== "admin") {
+      toast({
+        variant: "destructive",
+        description: "Apenas administradores podem excluir clientes.",
+      })
+      setConfirmDeleteOpen(false)
+      return
+    }
 
-    toast({
-      description: `Cliente ${clienteToDelete.nome} excluído com sucesso.`,
-    })
+    setActionLoading("delete")
 
-    setConfirmDeleteOpen(false)
-    setClienteToDelete(null)
+    // Simular tempo de processamento
+    setTimeout(() => {
+      const updatedClientes = clientes.filter((c) => c.id !== clienteToDelete.id)
+      setClientes(updatedClientes)
+      localStorage.setItem("clientes", JSON.stringify(updatedClientes))
+
+      toast({
+        description: `Cliente ${clienteToDelete.nome} excluído com sucesso.`,
+      })
+
+      setConfirmDeleteOpen(false)
+      setClienteToDelete(null)
+      setActionLoading("")
+    }, 1000)
   }
 
   const handleFormSubmit = (e) => {
     e.preventDefault()
+    setActionLoading("save")
 
-    // Preparar data para salvar
-    const dataToSave = {
-      ...formData,
-      // Adicionar ID se for um novo cliente
-      id: formData.id || Date.now().toString(),
-      dataCadastro: formData.dataCadastro || new Date().toISOString(),
-    }
+    // Simular tempo de processamento
+    setTimeout(() => {
+      // Preparar data para salvar
+      const dataToSave = {
+        ...formData,
+        // Adicionar ID se for um novo cliente
+        id: formData.id || Date.now().toString(),
+        dataCadastro: formData.dataCadastro || new Date().toISOString(),
+      }
 
-    // Verificar se é edição ou novo cadastro
-    if (formData.id) {
-      // Edição - atualizar cliente existente
-      const updatedClientes = clientes.map((c) => (c.id === formData.id ? dataToSave : c))
-      setClientes(updatedClientes)
-      localStorage.setItem("clientes", JSON.stringify(updatedClientes))
-      toast({
-        description: `Cliente ${dataToSave.nome} atualizado com sucesso.`,
-      })
-    } else {
-      // Novo cliente
-      const newClientes = [...clientes, dataToSave]
-      setClientes(newClientes)
-      localStorage.setItem("clientes", JSON.stringify(newClientes))
-      toast({
-        description: `Cliente ${dataToSave.nome} cadastrado com sucesso.`,
-      })
-    }
+      // Verificar se é edição ou novo cadastro
+      if (formData.id) {
+        // Edição - atualizar cliente existente
+        const updatedClientes = clientes.map((c) => (c.id === formData.id ? dataToSave : c))
+        setClientes(updatedClientes)
+        localStorage.setItem("clientes", JSON.stringify(updatedClientes))
+        toast({
+          description: `Cliente ${dataToSave.nome} atualizado com sucesso.`,
+        })
+      } else {
+        // Novo cliente
+        const newClientes = [...clientes, dataToSave]
+        setClientes(newClientes)
+        localStorage.setItem("clientes", JSON.stringify(newClientes))
+        toast({
+          description: `Cliente ${dataToSave.nome} cadastrado com sucesso.`,
+        })
+      }
 
-    setFormDialogOpen(false)
-    resetForm()
+      setFormDialogOpen(false)
+      resetForm()
+      setActionLoading("")
+    }, 1000)
   }
 
   const handleChange = (e) => {
@@ -189,7 +231,6 @@ export default function ClientesPage() {
   }
 
   const viewClientDetails = (cliente) => {
-    // Em um sistema real, você navegaria para a página de detalhes
     router.push(`/clientes/${cliente.id}`)
   }
 
@@ -209,7 +250,7 @@ export default function ClientesPage() {
         </div>
         <Dialog open={formDialogOpen} onOpenChange={setFormDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={resetForm} className="bg-red-600 hover:bg-red-700">
               <PlusCircle className="mr-2 h-4 w-4" />
               Novo Cliente
             </Button>
@@ -227,6 +268,17 @@ export default function ClientesPage() {
                     value={formData.nome}
                     onChange={handleChange}
                     placeholder="Nome do cliente"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">CPF*</label>
+                  <Input
+                    name="cpf"
+                    value={formData.cpf}
+                    onChange={handleChange}
+                    placeholder="000.000.000-00"
                     required
                   />
                 </div>
@@ -335,12 +387,41 @@ export default function ClientesPage() {
                 />
               </div>
 
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Medicamentos Recorrentes</label>
+                <Textarea
+                  name="medicamentosRecorrentes"
+                  value={
+                    Array.isArray(formData.medicamentosRecorrentes) ? formData.medicamentosRecorrentes.join(", ") : ""
+                  }
+                  onChange={(e) => {
+                    const meds = e.target.value
+                      .split(",")
+                      .map((med) => med.trim())
+                      .filter(Boolean)
+                    setFormData((prev) => ({ ...prev, medicamentosRecorrentes: meds }))
+                  }}
+                  placeholder="Lista de medicamentos usados periodicamente (separados por vírgula)"
+                  rows={3}
+                />
+                <p className="text-xs text-gray-500">Ex: Losartana 50mg, Atenolol 25mg</p>
+              </div>
+
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setFormDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                  {formData.id ? "Atualizar" : "Cadastrar"}
+                <Button type="submit" className="bg-red-600 hover:bg-red-700" disabled={actionLoading === "save"}>
+                  {actionLoading === "save" ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {formData.id ? "Atualizando..." : "Cadastrando..."}
+                    </>
+                  ) : formData.id ? (
+                    "Atualizar"
+                  ) : (
+                    "Cadastrar"
+                  )}
                 </Button>
               </DialogFooter>
             </form>
@@ -374,6 +455,7 @@ export default function ClientesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
+                <TableHead>CPF</TableHead>
                 <TableHead className="hidden md:table-cell">Contato</TableHead>
                 <TableHead className="hidden md:table-cell">Tipo</TableHead>
                 <TableHead className="hidden md:table-cell">Status</TableHead>
@@ -389,6 +471,7 @@ export default function ClientesPage() {
                       <span className="text-xs text-gray-500 md:hidden">{cliente.telefone}</span>
                     </div>
                   </TableCell>
+                  <TableCell>{cliente.cpf || "Não informado"}</TableCell>
                   <TableCell className="hidden md:table-cell">
                     <div className="flex flex-col space-y-1">
                       <span className="flex items-center text-sm">
@@ -481,8 +564,15 @@ export default function ClientesPage() {
             <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={executeDelete}>
-              Excluir
+            <Button variant="destructive" onClick={executeDelete} disabled={actionLoading === "delete"}>
+              {actionLoading === "delete" ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                "Excluir"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

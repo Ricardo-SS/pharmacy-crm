@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Users, ShoppingBag, Package, AlertCircle, TrendingUp, CreditCard } from "lucide-react"
+import { Users, ShoppingBag, Package, AlertCircle, TrendingUp, CreditCard, Keyboard } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { initializeData } from "@/lib/init-data"
 import { useRouter } from "next/navigation"
@@ -65,6 +65,32 @@ export default function Dashboard() {
     router.push(route)
   }
 
+  const ShortcutHelpBar = () => {
+    return (
+      <div className="bg-gray-800 text-white p-2 text-xs flex justify-center space-x-4 rounded-md mb-4">
+        <span className="flex items-center">
+          <Keyboard className="h-3 w-3 mr-1" />
+          Atalhos do Sistema:
+        </span>
+        <span>
+          <kbd className="px-1 py-0.5 bg-gray-700 rounded">Alt+C</kbd> Clientes
+        </span>
+        <span>
+          <kbd className="px-1 py-0.5 bg-gray-700 rounded">Alt+P</kbd> Produtos
+        </span>
+        <span>
+          <kbd className="px-1 py-0.5 bg-gray-700 rounded">Alt+V</kbd> PDV
+        </span>
+        <span>
+          <kbd className="px-1 py-0.5 bg-gray-700 rounded">Alt+X</kbd> Caixa
+        </span>
+        <span>
+          <kbd className="px-1 py-0.5 bg-gray-700 rounded">Alt+R</kbd> Relatórios
+        </span>
+      </div>
+    )
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -82,6 +108,8 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold mb-2">Dashboard</h1>
         <p className="text-gray-500">Bem-vindo ao Sistema de Gestão para Farmácias</p>
       </div>
+
+      <ShortcutHelpBar />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div onClick={() => navigateTo("/clientes")} className="cursor-pointer transition-transform hover:scale-[1.02]">
@@ -111,7 +139,7 @@ export default function Dashboard() {
             trend="+2% que ontem"
           />
         </div>
-        <div className="transition-transform">
+        <div className="cursor-pointer transition-transform hover:scale-[1.02]" onClick={() => navigateTo("/produtos")}>
           <InfoCard
             title="Alertas"
             value={stats.produtosBaixoEstoque}

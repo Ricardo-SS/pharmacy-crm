@@ -5,6 +5,41 @@ export const initializeData = () => {
   const produtos = localStorage.getItem("produtos")
   const vendas = localStorage.getItem("vendas")
   const dadosFarmacia = localStorage.getItem("dadosFarmacia")
+  const usuarios = localStorage.getItem("usuarios")
+
+  // Inicializar usuários de exemplo se não existirem
+  if (!usuarios) {
+    const usuariosIniciais = [
+      {
+        id: "1",
+        nome: "Administrador",
+        email: "admin@pharmacrm.com",
+        usuario: "admin",
+        senha: "admin",
+        cargo: "Admin",
+        dataCadastro: new Date().toISOString(),
+      },
+      {
+        id: "2",
+        nome: "Gerente",
+        email: "gerente@pharmacrm.com",
+        usuario: "gerente",
+        senha: "gerente",
+        cargo: "Gerente",
+        dataCadastro: new Date().toISOString(),
+      },
+      {
+        id: "3",
+        nome: "Vendedor",
+        email: "vendedor@pharmacrm.com",
+        usuario: "vendedor",
+        senha: "vendedor",
+        cargo: "Vendedor",
+        dataCadastro: new Date().toISOString(),
+      },
+    ]
+    localStorage.setItem("usuarios", JSON.stringify(usuariosIniciais))
+  }
 
   // Inicializar clientes de exemplo se não existirem
   if (!clientes) {
@@ -262,6 +297,7 @@ export const initializeData = () => {
         valorRecebido: 30,
         troco: 2.12,
         observacoes: "",
+        vendedor: "Vendedor",
       },
       {
         id: "2",
@@ -292,6 +328,7 @@ export const initializeData = () => {
         valorRecebido: 43.48,
         troco: 0,
         observacoes: "Cliente apresentou receita médica para a Amoxicilina.",
+        vendedor: "Gerente",
       },
     ]
     localStorage.setItem("vendas", JSON.stringify(vendasIniciais))

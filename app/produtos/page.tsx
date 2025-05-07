@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   PlusCircle,
   Search,
@@ -19,6 +20,7 @@ import {
   PencilLine,
   Trash2,
   Filter,
+  Loader2,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -36,8 +38,14 @@ export default function ProdutosPage() {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [produtoToDelete, setProdutoToDelete] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState("")
   const [filtroGrupo, setFiltroGrupo] = useState("todos")
   const [grupos, setGrupos] = useState([])
+  const [usuarioLogado, setUsuarioLogado] = useState(null)
+  // Adicionar estado para filtros de alerta
+  const [filtroAlerta, setFiltroAlerta] = useState("todos")
+  // Adicionar estado para fornecedores
+  const [fornecedores, setFornecedores] = useState([])
 
   const [formData, setFormData] = useState({
     id: "",
@@ -45,6 +53,7 @@ export default function ProdutosPage() {
     codigoBarras: "",
     dataValidade: "",
     necessitaReceita: false,
+    tipoReceita: "",
     tipo: "",
     grupo: "",
     descricao: "",
@@ -52,9 +61,15 @@ export default function ProdutosPage() {
     quantidadeDisponivel: 0,
     quantidadeMinima: 5,
     quantidadeVendida: 0,
+    fornecedor: "",
   })
 
+  // Modificar o useEffect inicial para carregar fornecedores
   useEffect(() => {
+    // Verificar usuário logado
+    const usuario = JSON.parse(localStorage.getItem("usuarioLogado") || "null")
+    setUsuarioLogado(usuario)
+
     // Carregar produtos do localStorage
     const storedProdutos = JSON.parse(localStorage.getItem("produtos") || "[]")
     setProdutos(storedProdutos)
@@ -64,9 +79,14 @@ export default function ProdutosPage() {
     const gruposUnicos = [...new Set(storedProdutos.map((p) => p.grupo))].filter(Boolean)
     setGrupos(gruposUnicos)
 
+    // Carregar fornecedores
+    const storedFornecedores = JSON.parse(localStorage.getItem("fornecedores") || "[]")
+    setFornecedores(storedFornecedores)
+
     setLoading(false)
   }, [])
 
+  // Modificar o useEffect de filtragem para incluir filtro de alerta
   useEffect(() => {
     let filtered = [...produtos]
 
@@ -84,8 +104,31 @@ export default function ProdutosPage() {
       filtered = filtered.filter((produto) => produto.grupo === filtroGrupo)
     }
 
+    // Filtrar por alerta
+    if (filtroAlerta === "estoque-baixo") {
+      filtered = filtered.filter((produto) => produto.quantidadeDisponivel <= produto.quantidadeMinima)
+    } else if (filtroAlerta === "vencimento-proximo") {
+      const hoje = new Date()
+      const trintaDiasDepois = new Date()
+      trintaDiasDepois.setDate(hoje.getDate() + 30)
+
+      filtered = filtered.filter((produto) => {
+        if (!produto.dataValidade) return false
+        const dataValidade = new Date(produto.dataValidade)
+        return dataValidade <= trintaDiasDepois && dataValidade >= hoje
+      })
+    } else if (filtroAlerta === "vencidos") {
+      const hoje = new Date()
+      filtered = filtered.filter((produto) => {
+        if (!produto.dataValidade) return false
+        return new Date(produto.dataValidade) < hoje
+      })
+    } else if (filtroAlerta === "receita") {
+      filtered = filtered.filter((produto) => produto.necessitaReceita)
+    }
+
     setFilteredProdutos(filtered)
-  }, [searchTerm, produtos, filtroGrupo])
+  }, [searchTerm, produtos, filtroGrupo, filtroAlerta])
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value)
@@ -95,6 +138,11 @@ export default function ProdutosPage() {
     setFiltroGrupo(grupo)
   }
 
+  // Adicionar função para manipular filtro de alerta
+  const handleSetFiltroAlerta = (alerta) => {
+    setFiltroAlerta(alerta)
+  }
+
   const resetForm = () => {
     setFormData({
       id: "",
@@ -102,6 +150,7 @@ export default function ProdutosPage() {
       codigoBarras: "",
       dataValidade: "",
       necessitaReceita: false,
+      tipoReceita: "",
       tipo: "",
       grupo: "",
       descricao: "",
@@ -109,6 +158,7 @@ export default function ProdutosPage() {
       quantidadeDisponivel: 0,
       quantidadeMinima: 5,
       quantidadeVendida: 0,
+      fornecedor: "",
     })
   }
 
@@ -131,58 +181,79 @@ export default function ProdutosPage() {
   const executeDelete = () => {
     if (!produtoToDelete) return
 
-    const updatedProdutos = produtos.filter((p) => p.id !== produtoToDelete.id)
-    setProdutos(updatedProdutos)
-    localStorage.setItem("produtos", JSON.stringify(updatedProdutos))
+    // Verificar se o usuário é administrador
+    if (!usuarioLogado || usuarioLogado.cargo.toLowerCase() !== "admin") {
+      toast({
+        variant: "destructive",
+        description: "Apenas administradores podem excluir produtos.",
+      })
+      setConfirmDeleteOpen(false)
+      return
+    }
 
-    toast({
-      description: `Produto ${produtoToDelete.nome} excluído com sucesso.`,
-    })
+    setActionLoading("delete")
 
-    setConfirmDeleteOpen(false)
-    setProdutoToDelete(null)
+    // Simular tempo de processamento
+    setTimeout(() => {
+      const updatedProdutos = produtos.filter((p) => p.id !== produtoToDelete.id)
+      setProdutos(updatedProdutos)
+      localStorage.setItem("produtos", JSON.stringify(updatedProdutos))
+
+      toast({
+        description: `Produto ${produtoToDelete.nome} excluído com sucesso.`,
+      })
+
+      setConfirmDeleteOpen(false)
+      setProdutoToDelete(null)
+      setActionLoading("")
+    }, 1000)
   }
 
   const handleFormSubmit = (e) => {
     e.preventDefault()
+    setActionLoading("save")
 
-    // Preparar data para salvar
-    const dataToSave = {
-      ...formData,
-      // Adicionar ID se for um novo produto
-      id: formData.id || Date.now().toString(),
-      preco: Number.parseFloat(formData.preco) || 0,
-      quantidadeDisponivel: Number.parseInt(formData.quantidadeDisponivel) || 0,
-      quantidadeMinima: Number.parseInt(formData.quantidadeMinima) || 5,
-      quantidadeVendida: Number.parseInt(formData.quantidadeVendida) || 0,
-    }
-
-    // Verificar se é edição ou novo cadastro
-    if (formData.id) {
-      // Edição - atualizar produto existente
-      const updatedProdutos = produtos.map((p) => (p.id === formData.id ? dataToSave : p))
-      setProdutos(updatedProdutos)
-      localStorage.setItem("produtos", JSON.stringify(updatedProdutos))
-      toast({
-        description: `Produto ${dataToSave.nome} atualizado com sucesso.`,
-      })
-    } else {
-      // Novo produto
-      const newProdutos = [...produtos, dataToSave]
-      setProdutos(newProdutos)
-      localStorage.setItem("produtos", JSON.stringify(newProdutos))
-      toast({
-        description: `Produto ${dataToSave.nome} cadastrado com sucesso.`,
-      })
-
-      // Atualizar lista de grupos se necessário
-      if (dataToSave.grupo && !grupos.includes(dataToSave.grupo)) {
-        setGrupos([...grupos, dataToSave.grupo])
+    // Simular tempo de processamento
+    setTimeout(() => {
+      // Preparar data para salvar
+      const dataToSave = {
+        ...formData,
+        // Adicionar ID se for um novo produto
+        id: formData.id || Date.now().toString(),
+        preco: Number.parseFloat(formData.preco) || 0,
+        quantidadeDisponivel: Number.parseInt(formData.quantidadeDisponivel) || 0,
+        quantidadeMinima: Number.parseInt(formData.quantidadeMinima) || 5,
+        quantidadeVendida: Number.parseInt(formData.quantidadeVendida) || 0,
       }
-    }
 
-    setFormDialogOpen(false)
-    resetForm()
+      // Verificar se é edição ou novo cadastro
+      if (formData.id) {
+        // Edição - atualizar produto existente
+        const updatedProdutos = produtos.map((p) => (p.id === formData.id ? dataToSave : p))
+        setProdutos(updatedProdutos)
+        localStorage.setItem("produtos", JSON.stringify(updatedProdutos))
+        toast({
+          description: `Produto ${dataToSave.nome} atualizado com sucesso.`,
+        })
+      } else {
+        // Novo produto
+        const newProdutos = [...produtos, dataToSave]
+        setProdutos(newProdutos)
+        localStorage.setItem("produtos", JSON.stringify(newProdutos))
+        toast({
+          description: `Produto ${dataToSave.nome} cadastrado com sucesso.`,
+        })
+
+        // Atualizar lista de grupos se necessário
+        if (dataToSave.grupo && !grupos.includes(dataToSave.grupo)) {
+          setGrupos([...grupos, dataToSave.grupo])
+        }
+      }
+
+      setFormDialogOpen(false)
+      resetForm()
+      setActionLoading("")
+    }, 1000)
   }
 
   const handleChange = (e) => {
@@ -216,7 +287,7 @@ export default function ProdutosPage() {
         </div>
         <Dialog open={formDialogOpen} onOpenChange={setFormDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={resetForm} className="bg-red-600 hover:bg-red-700">
               <PlusCircle className="mr-2 h-4 w-4" />
               Novo Produto
             </Button>
@@ -237,7 +308,6 @@ export default function ProdutosPage() {
                     required
                   />
                 </div>
-
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Código de Barras</label>
                   <Input
@@ -247,12 +317,10 @@ export default function ProdutosPage() {
                     placeholder="Código de barras"
                   />
                 </div>
-
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Tipo</label>
                   <Input name="tipo" value={formData.tipo} onChange={handleChange} placeholder="Tipo do produto" />
                 </div>
-
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Grupo</label>
                   <Input
@@ -268,12 +336,43 @@ export default function ProdutosPage() {
                     ))}
                   </datalist>
                 </div>
-
+                // Dentro do formulário de produto, após o campo de grupo:
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Fornecedor</label>
+                  <div className="flex gap-2">
+                    <Select
+                      value={formData.fornecedor || ""}
+                      onValueChange={(value) => handleSelectChange("fornecedor", value)}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Selecione um fornecedor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Sem fornecedor</SelectItem>
+                        {fornecedores.map((fornecedor) => (
+                          <SelectItem key={fornecedor.id} value={fornecedor.id}>
+                            {fornecedor.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        // Abrir modal de cadastro de fornecedor
+                        // Implementação será feita em outro arquivo
+                      }}
+                    >
+                      <PlusCircle className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Data de Validade</label>
                   <Input name="dataValidade" value={formData.dataValidade} onChange={handleChange} type="date" />
                 </div>
-
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Preço (R$)*</label>
                   <Input
@@ -286,7 +385,6 @@ export default function ProdutosPage() {
                     required
                   />
                 </div>
-
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Quantidade Disponível*</label>
                   <Input
@@ -298,7 +396,6 @@ export default function ProdutosPage() {
                     required
                   />
                 </div>
-
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Quantidade Mínima</label>
                   <Input
@@ -309,7 +406,6 @@ export default function ProdutosPage() {
                     min="1"
                   />
                 </div>
-
                 <div className="col-span-1 md:col-span-2 flex items-center space-x-2">
                   <input
                     type="checkbox"
@@ -323,6 +419,26 @@ export default function ProdutosPage() {
                     Este produto requer receita médica
                   </label>
                 </div>
+                {formData.necessitaReceita && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Tipo de Receita</label>
+                    <Select
+                      value={formData.tipoReceita}
+                      onValueChange={(value) => handleSelectChange("tipoReceita", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo de receita" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="comum">Receita Comum</SelectItem>
+                        <SelectItem value="branca">Receita Branca</SelectItem>
+                        <SelectItem value="azul">Receita Azul (B)</SelectItem>
+                        <SelectItem value="amarela">Receita Amarela (A)</SelectItem>
+                        <SelectItem value="especial">Receita Especial</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -340,15 +456,23 @@ export default function ProdutosPage() {
                 <Button type="button" variant="outline" onClick={() => setFormDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                  {formData.id ? "Atualizar" : "Cadastrar"}
+                <Button type="submit" className="bg-red-600 hover:bg-red-700" disabled={actionLoading === "save"}>
+                  {actionLoading === "save" ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {formData.id ? "Atualizando..." : "Cadastrando..."}
+                    </>
+                  ) : formData.id ? (
+                    "Atualizar"
+                  ) : (
+                    "Cadastrar"
+                  )}
                 </Button>
               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
       </div>
-
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
         <div className="relative w-full md:w-96">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
@@ -366,7 +490,7 @@ export default function ProdutosPage() {
               <Filter className="mr-2 h-4 w-4" />
               Filtrar por Grupo
               {filtroGrupo !== "todos" && (
-                <Badge className="ml-2 bg-blue-100 text-blue-800 hover:bg-blue-100">{filtroGrupo}</Badge>
+                <Badge className="ml-2 bg-red-100 text-red-800 hover:bg-red-100">{filtroGrupo}</Badge>
               )}
             </Button>
           </DropdownMenuTrigger>
@@ -389,7 +513,54 @@ export default function ProdutosPage() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
+      // Adicionar abas de filtro após a barra de pesquisa // Após a div que contém a barra de pesquisa e o dropdown de
+      filtro por grupo:
+      <div className="flex overflow-x-auto space-x-2 pb-2 mt-2">
+        <Button
+          variant={filtroAlerta === "todos" ? "default" : "outline"}
+          size="sm"
+          onClick={() => handleSetFiltroAlerta("todos")}
+          className="whitespace-nowrap"
+        >
+          Todos
+        </Button>
+        <Button
+          variant={filtroAlerta === "estoque-baixo" ? "default" : "outline"}
+          size="sm"
+          onClick={() => handleSetFiltroAlerta("estoque-baixo")}
+          className="whitespace-nowrap text-amber-600 border-amber-600"
+        >
+          <AlertTriangle className="h-4 w-4 mr-1" />
+          Estoque Baixo
+        </Button>
+        <Button
+          variant={filtroAlerta === "vencimento-proximo" ? "default" : "outline"}
+          size="sm"
+          onClick={() => handleSetFiltroAlerta("vencimento-proximo")}
+          className="whitespace-nowrap text-orange-600 border-orange-600"
+        >
+          <CalendarClock className="h-4 w-4 mr-1" />
+          Vencimento Próximo
+        </Button>
+        <Button
+          variant={filtroAlerta === "vencidos" ? "default" : "outline"}
+          size="sm"
+          onClick={() => handleSetFiltroAlerta("vencidos")}
+          className="whitespace-nowrap text-red-600 border-red-600"
+        >
+          <AlertTriangle className="h-4 w-4 mr-1" />
+          Vencidos
+        </Button>
+        <Button
+          variant={filtroAlerta === "receita" ? "default" : "outline"}
+          size="sm"
+          onClick={() => handleSetFiltroAlerta("receita")}
+          className="whitespace-nowrap text-purple-600 border-purple-600"
+        >
+          <FileText className="h-4 w-4 mr-1" />
+          Requer Receita
+        </Button>
+      </div>
       {filteredProdutos.length > 0 ? (
         <div className="border rounded-lg overflow-hidden">
           <Table>
@@ -428,7 +599,7 @@ export default function ProdutosPage() {
                         <FileText className="h-3 w-3 mr-1" />
                         {produto.necessitaReceita ? (
                           <Badge variant="destructive" className="text-xs h-5">
-                            Requer Receita
+                            {produto.tipoReceita ? `Receita ${produto.tipoReceita}` : "Requer Receita"}
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="text-xs h-5">
@@ -494,7 +665,6 @@ export default function ProdutosPage() {
           </p>
         </div>
       )}
-
       <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
         <DialogContent>
           <DialogHeader>
@@ -510,8 +680,15 @@ export default function ProdutosPage() {
             <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>
               Cancelar
             </Button>
-            <Button variant="destructive" onClick={executeDelete}>
-              Excluir
+            <Button variant="destructive" onClick={executeDelete} disabled={actionLoading === "delete"}>
+              {actionLoading === "delete" ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                "Excluir"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

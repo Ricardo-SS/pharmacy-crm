@@ -1,14 +1,201 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BarChart2, Download, Calendar, TrendingUp, Package, Users, DollarSign, ShoppingCart } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { useToast } from "@/hooks/use-toast"
+import {
+  BarChart2,
+  Download,
+  Calendar,
+  TrendingUp,
+  Package,
+  Users,
+  DollarSign,
+  ShoppingCart,
+  FileText,
+  Loader2,
+  Filter,
+} from "lucide-react"
+import { jsPDF } from "jspdf"
+import "jspdf-autotable"
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+} from "recharts"
+
+// Adicionar uma nova função para gerar dados de tendência
+const gerarDadosTendencia = (vendas) => {
+  // Agrupar vendas por mês
+  const vendasPorMes = {}
+
+  vendas.forEach((venda) => {
+    const data = new Date(venda.data)
+    const mesAno = `${data.getMonth() + 1}/${data.getFullYear()}`
+
+    if (!vendasPorMes[mesAno]) {
+      vendasPorMes[mesAno] = {
+        mes: mesAno,
+        quantidade: 0,
+        valor: 0,
+      }
+    }
+
+    vendasPorMes[mesAno].quantidade += 1
+    vendasPorMes[mesAno].valor += venda.valorTotal
+  })
+
+  // Converter para array e ordenar por data
+  return Object.values(vendasPorMes).sort((a, b) => {
+    const [mesA, anoA] = a.mes.split("/")
+    const [mesB, anoB] = b.mes.split("/")
+
+    if (anoA !== anoB) return anoA - anoB
+    return mesA - mesB
+  })
+}
+
+// Adicionar componente de gráfico de tendência
+const TendenciaChart = ({ vendas }) => {
+  const dados = gerarDadosTendencia(vendas)
+
+  if (dados.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <BarChart2 className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+        <h3 className="text-lg font-medium text-gray-500">Sem dados suficientes</h3>
+        <p className="text-gray-500 text-sm mt-1">Não há dados suficientes para gerar o gráfico de tendência</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="h-80">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart
+          data={dados}
+          margin={{
+            top: 5,
+            right: 30,
+            left: 20,
+            bottom: 5,
+          }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="mes" />
+          <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
+          <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+          <Tooltip />
+          <Legend />
+          <Line
+            yAxisId="left"
+            type="monotone"
+            dataKey="quantidade"
+            stroke="#8884d8"
+            name="Quantidade de Vendas"
+            activeDot={{ r: 8 }}
+          />
+          <Line yAxisId="right" type="monotone" dataKey="valor" stroke="#82ca9d" name="Valor Total (R$)" />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+// Adicionar componente de gráfico de produtos mais vendidos
+const ProdutosChart = ({ produtos }) => {
+  // Pegar os 5 produtos mais vendidos
+  const dadosProdutos = produtos.slice(0, 5)
+
+  if (dadosProdutos.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <BarChart2 className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+        <h3 className="text-lg font-medium text-gray-500">Sem dados suficientes</h3>
+        <p className="text-gray-500 text-sm mt-1">Não há dados suficientes para gerar o gráfico</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="h-80">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={dadosProdutos}
+          margin={{
+            top: 5,
+            right: 30,
+            left: 20,
+            bottom: 5,
+          }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="nome" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Bar dataKey="quantidade" fill="#8884d8" name="Quantidade Vendida" />
+          <Bar dataKey="valor" fill="#82ca9d" name="Valor Total (R$)" />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+// Adicionar componente de gráfico de clientes
+const ClientesChart = ({ clientes }) => {
+  // Pegar os 5 melhores clientes
+  const dadosClientes = clientes.slice(0, 5)
+
+  if (dadosClientes.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <BarChart2 className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+        <h3 className="text-lg font-medium text-gray-500">Sem dados suficientes</h3>
+        <p className="text-gray-500 text-sm mt-1">Não há dados suficientes para gerar o gráfico</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="h-80">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={dadosClientes}
+          margin={{
+            top: 5,
+            right: 30,
+            left: 20,
+            bottom: 5,
+          }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="nome" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Bar dataKey="compras" fill="#8884d8" name="Número de Compras" />
+          <Bar dataKey="valor" fill="#82ca9d" name="Valor Total (R$)" />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
 
 export default function RelatoriosPage() {
+  const { toast } = useToast()
   const [dataInicio, setDataInicio] = useState("")
   const [dataFim, setDataFim] = useState("")
   const [tipoRelatorio, setTipoRelatorio] = useState("vendas")
@@ -24,6 +211,19 @@ export default function RelatoriosPage() {
     clienteMaisComprou: { nome: "", valor: 0 },
   })
   const [loading, setLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState("")
+  const [camposSelecionados, setCamposSelecionados] = useState({
+    vendas: ["data", "cliente", "itens", "valorTotal", "metodoPagamento"],
+    produtos: ["nome", "quantidade", "valor", "media"],
+    clientes: ["nome", "compras", "valor", "media"],
+  })
+  const [filtros, setFiltros] = useState({
+    metodoPagamento: "todos",
+    valorMinimo: "",
+    valorMaximo: "",
+  })
+
+  const tableRef = useRef(null)
 
   useEffect(() => {
     // Carregar dados
@@ -50,11 +250,11 @@ export default function RelatoriosPage() {
     if (dataInicio && dataFim) {
       gerarRelatorio()
     }
-  }, [dataInicio, dataFim, tipoRelatorio, vendas, produtos, clientes])
+  }, [dataInicio, dataFim, tipoRelatorio, vendas, produtos, clientes, filtros])
 
   const gerarRelatorio = () => {
     // Filtrar vendas pelo período
-    const vendasPeriodo = vendas.filter((venda) => {
+    let vendasPeriodo = vendas.filter((venda) => {
       const dataVenda = new Date(venda.data)
       const inicio = new Date(dataInicio)
       const fim = new Date(dataFim)
@@ -62,6 +262,21 @@ export default function RelatoriosPage() {
 
       return dataVenda >= inicio && dataVenda <= fim
     })
+
+    // Aplicar filtros adicionais
+    if (filtros.metodoPagamento !== "todos") {
+      vendasPeriodo = vendasPeriodo.filter((venda) => venda.metodoPagamento === filtros.metodoPagamento)
+    }
+
+    if (filtros.valorMinimo) {
+      const valorMinimo = Number.parseFloat(filtros.valorMinimo)
+      vendasPeriodo = vendasPeriodo.filter((venda) => venda.valorTotal >= valorMinimo)
+    }
+
+    if (filtros.valorMaximo) {
+      const valorMaximo = Number.parseFloat(filtros.valorMaximo)
+      vendasPeriodo = vendasPeriodo.filter((venda) => venda.valorTotal <= valorMaximo)
+    }
 
     // Calcular resumo
     const totalVendas = vendasPeriodo.length
@@ -127,6 +342,7 @@ export default function RelatoriosPage() {
             itens: venda.itens.length,
             valorTotal: venda.valorTotal,
             metodoPagamento: formatarMetodoPagamento(venda.metodoPagamento),
+            vendedor: venda.vendedor || "Não identificado",
           })),
         )
         break
@@ -180,37 +396,281 @@ export default function RelatoriosPage() {
   }
 
   const exportarCSV = () => {
-    // Função para exportar os dados do relatório em CSV
-    let csv = ""
+    setActionLoading("exportarCSV")
 
-    // Cabeçalhos
-    if (tipoRelatorio === "vendas") {
-      csv = "ID,Data,Cliente,Itens,Valor Total,Método de Pagamento\n"
-      dadosRelatorio.forEach((venda) => {
-        csv += `${venda.id},${venda.data},"${venda.cliente}",${venda.itens},${venda.valorTotal},${venda.metodoPagamento}\n`
-      })
-    } else if (tipoRelatorio === "produtos") {
-      csv = "Produto,Quantidade,Valor Total,Valor Médio\n"
-      dadosRelatorio.forEach((produto) => {
-        csv += `"${produto.nome}",${produto.quantidade},${produto.valor.toFixed(2)},${produto.media.toFixed(2)}\n`
-      })
-    } else if (tipoRelatorio === "clientes") {
-      csv = "Cliente,Compras,Valor Total,Valor Médio\n"
-      dadosRelatorio.forEach((cliente) => {
-        csv += `"${cliente.nome}",${cliente.compras},${cliente.valor.toFixed(2)},${cliente.media.toFixed(2)}\n`
-      })
-    }
+    // Simular tempo de processamento
+    setTimeout(() => {
+      // Função para exportar os dados do relatório em CSV
+      let csv = ""
 
-    // Criar blob e link para download
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.setAttribute("href", url)
-    link.setAttribute("download", `relatorio_${tipoRelatorio}_${dataInicio}_${dataFim}.csv`)
-    link.style.visibility = "hidden"
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+      // Cabeçalhos
+      if (tipoRelatorio === "vendas") {
+        const campos = camposSelecionados.vendas
+        csv = campos.join(",") + "\n"
+
+        dadosRelatorio.forEach((venda) => {
+          const linha = campos
+            .map((campo) => {
+              // Tratar strings com vírgulas
+              if (typeof venda[campo] === "string" && venda[campo].includes(",")) {
+                return `"${venda[campo]}"`
+              }
+              return venda[campo]
+            })
+            .join(",")
+          csv += linha + "\n"
+        })
+      } else if (tipoRelatorio === "produtos") {
+        const campos = camposSelecionados.produtos
+        csv = campos.join(",") + "\n"
+
+        dadosRelatorio.forEach((produto) => {
+          const linha = campos
+            .map((campo) => {
+              if (campo === "valor" || campo === "media") {
+                return produto[campo].toFixed(2)
+              }
+              // Tratar strings com vírgulas
+              if (typeof produto[campo] === "string" && produto[campo].includes(",")) {
+                return `"${produto[campo]}"`
+              }
+              return produto[campo]
+            })
+            .join(",")
+          csv += linha + "\n"
+        })
+      } else if (tipoRelatorio === "clientes") {
+        const campos = camposSelecionados.clientes
+        csv = campos.join(",") + "\n"
+
+        dadosRelatorio.forEach((cliente) => {
+          const linha = campos
+            .map((campo) => {
+              if (campo === "valor" || campo === "media") {
+                return cliente[campo].toFixed(2)
+              }
+              // Tratar strings com vírgulas
+              if (typeof cliente[campo] === "string" && cliente[campo].includes(",")) {
+                return `"${cliente[campo]}"`
+              }
+              return cliente[campo]
+            })
+            .join(",")
+          csv += linha + "\n"
+        })
+      }
+
+      // Criar blob e link para download
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.setAttribute("href", url)
+      link.setAttribute("download", `relatorio_${tipoRelatorio}_${dataInicio}_${dataFim}.csv`)
+      link.style.visibility = "hidden"
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      toast({
+        description: "Relatório CSV exportado com sucesso!",
+      })
+
+      setActionLoading("")
+    }, 1000)
+  }
+
+  const exportarPDF = () => {
+    setActionLoading("exportarPDF")
+
+    // Simular tempo de processamento
+    setTimeout(() => {
+      try {
+        const doc = new jsPDF()
+
+        // Título
+        doc.setFontSize(18)
+        doc.text("PharmaCRM - Relatório", 14, 22)
+
+        // Subtítulo
+        doc.setFontSize(12)
+        doc.text(
+          `Relatório de ${tipoRelatorio === "vendas" ? "Vendas" : tipoRelatorio === "produtos" ? "Produtos" : "Clientes"}`,
+          14,
+          30,
+        )
+        doc.text(`Período: ${formatarData(dataInicio)} a ${formatarData(dataFim)}`, 14, 36)
+
+        // Resumo
+        doc.setFontSize(14)
+        doc.text("Resumo", 14, 46)
+
+        doc.setFontSize(10)
+        doc.text(`Total de Vendas: ${resumo.totalVendas}`, 14, 54)
+        doc.text(`Valor Total: R$ ${resumo.valorTotal.toFixed(2)}`, 14, 60)
+        doc.text(
+          `Produto Mais Vendido: ${resumo.produtoMaisVendido.nome} (${resumo.produtoMaisVendido.quantidade} unid.)`,
+          14,
+          66,
+        )
+        doc.text(
+          `Melhor Cliente: ${resumo.clienteMaisComprou.nome} (R$ ${resumo.clienteMaisComprou.valor.toFixed(2)})`,
+          14,
+          72,
+        )
+
+        // Tabela de dados
+        doc.setFontSize(14)
+        doc.text("Dados Detalhados", 14, 82)
+
+        // Configurar colunas e dados para a tabela
+        let columns = []
+        let data = []
+
+        if (tipoRelatorio === "vendas") {
+          const campos = camposSelecionados.vendas
+          columns = campos.map((campo) => {
+            switch (campo) {
+              case "data":
+                return { header: "Data", dataKey: "data" }
+              case "cliente":
+                return { header: "Cliente", dataKey: "cliente" }
+              case "itens":
+                return { header: "Itens", dataKey: "itens" }
+              case "valorTotal":
+                return { header: "Valor Total", dataKey: "valorTotal" }
+              case "metodoPagamento":
+                return { header: "Pagamento", dataKey: "metodoPagamento" }
+              case "vendedor":
+                return { header: "Vendedor", dataKey: "vendedor" }
+              default:
+                return { header: campo, dataKey: campo }
+            }
+          })
+
+          data = dadosRelatorio.map((venda) => {
+            const row = {}
+            campos.forEach((campo) => {
+              if (campo === "valorTotal") {
+                row[campo] = `R$ ${venda[campo].toFixed(2)}`
+              } else {
+                row[campo] = venda[campo]
+              }
+            })
+            return row
+          })
+        } else if (tipoRelatorio === "produtos") {
+          const campos = camposSelecionados.produtos
+          columns = campos.map((campo) => {
+            switch (campo) {
+              case "nome":
+                return { header: "Produto", dataKey: "nome" }
+              case "quantidade":
+                return { header: "Quantidade", dataKey: "quantidade" }
+              case "valor":
+                return { header: "Valor Total", dataKey: "valor" }
+              case "media":
+                return { header: "Valor Médio", dataKey: "media" }
+              default:
+                return { header: campo, dataKey: campo }
+            }
+          })
+
+          data = dadosRelatorio.map((produto) => {
+            const row = {}
+            campos.forEach((campo) => {
+              if (campo === "valor" || campo === "media") {
+                row[campo] = `R$ ${produto[campo].toFixed(2)}`
+              } else {
+                row[campo] = produto[campo]
+              }
+            })
+            return row
+          })
+        } else if (tipoRelatorio === "clientes") {
+          const campos = camposSelecionados.clientes
+          columns = campos.map((campo) => {
+            switch (campo) {
+              case "nome":
+                return { header: "Cliente", dataKey: "nome" }
+              case "compras":
+                return { header: "Compras", dataKey: "compras" }
+              case "valor":
+                return { header: "Valor Total", dataKey: "valor" }
+              case "media":
+                return { header: "Valor Médio", dataKey: "media" }
+              default:
+                return { header: campo, dataKey: campo }
+            }
+          })
+
+          data = dadosRelatorio.map((cliente) => {
+            const row = {}
+            campos.forEach((campo) => {
+              if (campo === "valor" || campo === "media") {
+                row[campo] = `R$ ${cliente[campo].toFixed(2)}`
+              } else {
+                row[campo] = cliente[campo]
+              }
+            })
+            return row
+          })
+        }
+
+        // Adicionar a tabela ao PDF
+        doc.autoTable({
+          startY: 90,
+          head: [columns.map((col) => col.header)],
+          body: data.map((row) => columns.map((col) => row[col.dataKey])),
+          theme: "grid",
+          headStyles: { fillColor: [66, 139, 202] },
+        })
+
+        // Rodapé
+        const pageCount = doc.internal.getNumberOfPages()
+        doc.setFontSize(8)
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i)
+          doc.text(
+            `Página ${i} de ${pageCount} - Gerado em ${new Date().toLocaleString()}`,
+            14,
+            doc.internal.pageSize.height - 10,
+          )
+        }
+
+        // Salvar o PDF
+        doc.save(`relatorio_${tipoRelatorio}_${dataInicio}_${dataFim}.pdf`)
+
+        toast({
+          description: "Relatório PDF exportado com sucesso!",
+        })
+      } catch (error) {
+        console.error("Erro ao gerar PDF:", error)
+        toast({
+          variant: "destructive",
+          description: "Erro ao gerar o PDF. Tente novamente.",
+        })
+      }
+
+      setActionLoading("")
+    }, 1500)
+  }
+
+  const handleCampoChange = (tipo, campo, checked) => {
+    setCamposSelecionados((prev) => {
+      const novosCampos = checked ? [...prev[tipo], campo] : prev[tipo].filter((c) => c !== campo)
+
+      return {
+        ...prev,
+        [tipo]: novosCampos,
+      }
+    })
+  }
+
+  const handleFiltroChange = (campo, valor) => {
+    setFiltros((prev) => ({
+      ...prev,
+      [campo]: valor,
+    }))
   }
 
   if (loading) {
@@ -261,11 +721,249 @@ export default function RelatoriosPage() {
               </Select>
             </div>
 
-            <div className="flex items-end">
-              <Button variant="outline" className="gap-2" onClick={exportarCSV}>
-                <Download className="h-4 w-4" />
-                Exportar CSV
+            <div className="flex items-end gap-2">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={exportarCSV}
+                disabled={actionLoading === "exportarCSV"}
+              >
+                {actionLoading === "exportarCSV" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                CSV
               </Button>
+
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={exportarPDF}
+                disabled={actionLoading === "exportarPDF"}
+              >
+                {actionLoading === "exportarPDF" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FileText className="h-4 w-4" />
+                )}
+                PDF
+              </Button>
+            </div>
+          </div>
+
+          {/* Filtros adicionais para vendas */}
+          {tipoRelatorio === "vendas" && (
+            <div className="mt-4 pt-4 border-t">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="w-full md:w-64">
+                  <label className="text-xs text-gray-500 mb-1 block">Método de Pagamento</label>
+                  <Select
+                    value={filtros.metodoPagamento}
+                    onValueChange={(value) => handleFiltroChange("metodoPagamento", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o método" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                      <SelectItem value="credito">Cartão de Crédito</SelectItem>
+                      <SelectItem value="pix">PIX</SelectItem>
+                      <SelectItem value="fiado">Fiado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="w-full md:w-64">
+                  <label className="text-xs text-gray-500 mb-1 block">Valor Mínimo (R$)</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={filtros.valorMinimo}
+                    onChange={(e) => handleFiltroChange("valorMinimo", e.target.value)}
+                    placeholder="Valor mínimo"
+                  />
+                </div>
+
+                <div className="w-full md:w-64">
+                  <label className="text-xs text-gray-500 mb-1 block">Valor Máximo (R$)</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={filtros.valorMaximo}
+                    onChange={(e) => handleFiltroChange("valorMaximo", e.target.value)}
+                    placeholder="Valor máximo"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Seleção de campos */}
+          <div className="mt-4 pt-4 border-t">
+            <div className="flex items-center gap-2 mb-2">
+              <Filter className="h-4 w-4" />
+              <h3 className="text-sm font-medium">Campos a exibir no relatório</h3>
+            </div>
+
+            <div className="flex flex-wrap gap-4">
+              {tipoRelatorio === "vendas" && (
+                <>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="campo-data"
+                      checked={camposSelecionados.vendas.includes("data")}
+                      onCheckedChange={(checked) => handleCampoChange("vendas", "data", checked)}
+                    />
+                    <label htmlFor="campo-data" className="text-sm">
+                      Data
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="campo-cliente"
+                      checked={camposSelecionados.vendas.includes("cliente")}
+                      onCheckedChange={(checked) => handleCampoChange("vendas", "cliente", checked)}
+                    />
+                    <label htmlFor="campo-cliente" className="text-sm">
+                      Cliente
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="campo-itens"
+                      checked={camposSelecionados.vendas.includes("itens")}
+                      onCheckedChange={(checked) => handleCampoChange("vendas", "itens", checked)}
+                    />
+                    <label htmlFor="campo-itens" className="text-sm">
+                      Itens
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="campo-valorTotal"
+                      checked={camposSelecionados.vendas.includes("valorTotal")}
+                      onCheckedChange={(checked) => handleCampoChange("vendas", "valorTotal", checked)}
+                    />
+                    <label htmlFor="campo-valorTotal" className="text-sm">
+                      Valor Total
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="campo-metodoPagamento"
+                      checked={camposSelecionados.vendas.includes("metodoPagamento")}
+                      onCheckedChange={(checked) => handleCampoChange("vendas", "metodoPagamento", checked)}
+                    />
+                    <label htmlFor="campo-metodoPagamento" className="text-sm">
+                      Método de Pagamento
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="campo-vendedor"
+                      checked={camposSelecionados.vendas.includes("vendedor")}
+                      onCheckedChange={(checked) => handleCampoChange("vendas", "vendedor", checked)}
+                    />
+                    <label htmlFor="campo-vendedor" className="text-sm">
+                      Vendedor
+                    </label>
+                  </div>
+                </>
+              )}
+
+              {tipoRelatorio === "produtos" && (
+                <>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="campo-nome-produto"
+                      checked={camposSelecionados.produtos.includes("nome")}
+                      onCheckedChange={(checked) => handleCampoChange("produtos", "nome", checked)}
+                    />
+                    <label htmlFor="campo-nome-produto" className="text-sm">
+                      Nome
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="campo-quantidade"
+                      checked={camposSelecionados.produtos.includes("quantidade")}
+                      onCheckedChange={(checked) => handleCampoChange("produtos", "quantidade", checked)}
+                    />
+                    <label htmlFor="campo-quantidade" className="text-sm">
+                      Quantidade
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="campo-valor-produto"
+                      checked={camposSelecionados.produtos.includes("valor")}
+                      onCheckedChange={(checked) => handleCampoChange("produtos", "valor", checked)}
+                    />
+                    <label htmlFor="campo-valor-produto" className="text-sm">
+                      Valor Total
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="campo-media-produto"
+                      checked={camposSelecionados.produtos.includes("media")}
+                      onCheckedChange={(checked) => handleCampoChange("produtos", "media", checked)}
+                    />
+                    <label htmlFor="campo-media-produto" className="text-sm">
+                      Valor Médio
+                    </label>
+                  </div>
+                </>
+              )}
+
+              {tipoRelatorio === "clientes" && (
+                <>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="campo-nome-cliente"
+                      checked={camposSelecionados.clientes.includes("nome")}
+                      onCheckedChange={(checked) => handleCampoChange("clientes", "nome", checked)}
+                    />
+                    <label htmlFor="campo-nome-cliente" className="text-sm">
+                      Nome
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="campo-compras"
+                      checked={camposSelecionados.clientes.includes("compras")}
+                      onCheckedChange={(checked) => handleCampoChange("clientes", "compras", checked)}
+                    />
+                    <label htmlFor="campo-compras" className="text-sm">
+                      Compras
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="campo-valor-cliente"
+                      checked={camposSelecionados.clientes.includes("valor")}
+                      onCheckedChange={(checked) => handleCampoChange("clientes", "valor", checked)}
+                    />
+                    <label htmlFor="campo-valor-cliente" className="text-sm">
+                      Valor Total
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="campo-media-cliente"
+                      checked={camposSelecionados.clientes.includes("media")}
+                      onCheckedChange={(checked) => handleCampoChange("clientes", "media", checked)}
+                    />
+                    <label htmlFor="campo-media-cliente" className="text-sm">
+                      Valor Médio
+                    </label>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </CardContent>
@@ -337,6 +1035,27 @@ export default function RelatoriosPage() {
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
+            Tendência de{" "}
+            {tipoRelatorio === "vendas" ? "Vendas" : tipoRelatorio === "produtos" ? "Produtos" : "Clientes"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {tipoRelatorio === "vendas" && (
+            <TendenciaChart
+              vendas={vendas.filter(
+                (v) => new Date(v.data) >= new Date(dataInicio) && new Date(v.data) <= new Date(dataFim),
+              )}
+            />
+          )}
+          {tipoRelatorio === "produtos" && <ProdutosChart produtos={dadosRelatorio} />}
+          {tipoRelatorio === "clientes" && <ClientesChart clientes={dadosRelatorio} />}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
             {tipoRelatorio === "vendas" && "Relatório de Vendas"}
             {tipoRelatorio === "produtos" && "Relatório de Produtos"}
             {tipoRelatorio === "clientes" && "Relatório de Clientes"}
@@ -344,32 +1063,49 @@ export default function RelatoriosPage() {
         </CardHeader>
         <CardContent className="p-0">
           {dadosRelatorio.length > 0 ? (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" ref={tableRef}>
               <Table>
                 <TableHeader>
                   {tipoRelatorio === "vendas" && (
                     <TableRow>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead className="text-center">Itens</TableHead>
-                      <TableHead>Pagamento</TableHead>
-                      <TableHead className="text-right">Valor</TableHead>
+                      {camposSelecionados.vendas.includes("data") && <TableHead>Data</TableHead>}
+                      {camposSelecionados.vendas.includes("cliente") && <TableHead>Cliente</TableHead>}
+                      {camposSelecionados.vendas.includes("itens") && (
+                        <TableHead className="text-center">Itens</TableHead>
+                      )}
+                      {camposSelecionados.vendas.includes("metodoPagamento") && <TableHead>Pagamento</TableHead>}
+                      {camposSelecionados.vendas.includes("valorTotal") && (
+                        <TableHead className="text-right">Valor</TableHead>
+                      )}
+                      {camposSelecionados.vendas.includes("vendedor") && <TableHead>Vendedor</TableHead>}
                     </TableRow>
                   )}
                   {tipoRelatorio === "produtos" && (
                     <TableRow>
-                      <TableHead>Produto</TableHead>
-                      <TableHead className="text-center">Quantidade</TableHead>
-                      <TableHead className="text-right">Valor Total</TableHead>
-                      <TableHead className="text-right">Valor Médio</TableHead>
+                      {camposSelecionados.produtos.includes("nome") && <TableHead>Produto</TableHead>}
+                      {camposSelecionados.produtos.includes("quantidade") && (
+                        <TableHead className="text-center">Quantidade</TableHead>
+                      )}
+                      {camposSelecionados.produtos.includes("valor") && (
+                        <TableHead className="text-right">Valor Total</TableHead>
+                      )}
+                      {camposSelecionados.produtos.includes("media") && (
+                        <TableHead className="text-right">Valor Médio</TableHead>
+                      )}
                     </TableRow>
                   )}
                   {tipoRelatorio === "clientes" && (
                     <TableRow>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead className="text-center">Compras</TableHead>
-                      <TableHead className="text-right">Valor Total</TableHead>
-                      <TableHead className="text-right">Valor Médio</TableHead>
+                      {camposSelecionados.clientes.includes("nome") && <TableHead>Cliente</TableHead>}
+                      {camposSelecionados.clientes.includes("compras") && (
+                        <TableHead className="text-center">Compras</TableHead>
+                      )}
+                      {camposSelecionados.clientes.includes("valor") && (
+                        <TableHead className="text-right">Valor Total</TableHead>
+                      )}
+                      {camposSelecionados.clientes.includes("media") && (
+                        <TableHead className="text-right">Valor Médio</TableHead>
+                      )}
                     </TableRow>
                   )}
                 </TableHeader>
@@ -377,29 +1113,48 @@ export default function RelatoriosPage() {
                   {tipoRelatorio === "vendas" &&
                     dadosRelatorio.map((venda) => (
                       <TableRow key={venda.id}>
-                        <TableCell>{venda.data}</TableCell>
-                        <TableCell>{venda.cliente}</TableCell>
-                        <TableCell className="text-center">{venda.itens}</TableCell>
-                        <TableCell>{venda.metodoPagamento}</TableCell>
-                        <TableCell className="text-right font-medium">R$ {venda.valorTotal.toFixed(2)}</TableCell>
+                        {camposSelecionados.vendas.includes("data") && <TableCell>{venda.data}</TableCell>}
+                        {camposSelecionados.vendas.includes("cliente") && <TableCell>{venda.cliente}</TableCell>}
+                        {camposSelecionados.vendas.includes("itens") && (
+                          <TableCell className="text-center">{venda.itens}</TableCell>
+                        )}
+                        {camposSelecionados.vendas.includes("metodoPagamento") && (
+                          <TableCell>{venda.metodoPagamento}</TableCell>
+                        )}
+                        {camposSelecionados.vendas.includes("valorTotal") && (
+                          <TableCell className="text-right font-medium">R$ {venda.valorTotal.toFixed(2)}</TableCell>
+                        )}
+                        {camposSelecionados.vendas.includes("vendedor") && <TableCell>{venda.vendedor}</TableCell>}
                       </TableRow>
                     ))}
                   {tipoRelatorio === "produtos" &&
                     dadosRelatorio.map((produto, index) => (
                       <TableRow key={index}>
-                        <TableCell>{produto.nome}</TableCell>
-                        <TableCell className="text-center">{produto.quantidade}</TableCell>
-                        <TableCell className="text-right">R$ {produto.valor.toFixed(2)}</TableCell>
-                        <TableCell className="text-right">R$ {produto.media.toFixed(2)}</TableCell>
+                        {camposSelecionados.produtos.includes("nome") && <TableCell>{produto.nome}</TableCell>}
+                        {camposSelecionados.produtos.includes("quantidade") && (
+                          <TableCell className="text-center">{produto.quantidade}</TableCell>
+                        )}
+                        {camposSelecionados.produtos.includes("valor") && (
+                          <TableCell className="text-right">R$ {produto.valor.toFixed(2)}</TableCell>
+                        )}
+                        {camposSelecionados.produtos.includes("media") && (
+                          <TableCell className="text-right">R$ {produto.media.toFixed(2)}</TableCell>
+                        )}
                       </TableRow>
                     ))}
                   {tipoRelatorio === "clientes" &&
                     dadosRelatorio.map((cliente, index) => (
                       <TableRow key={index}>
-                        <TableCell>{cliente.nome}</TableCell>
-                        <TableCell className="text-center">{cliente.compras}</TableCell>
-                        <TableCell className="text-right">R$ {cliente.valor.toFixed(2)}</TableCell>
-                        <TableCell className="text-right">R$ {cliente.media.toFixed(2)}</TableCell>
+                        {camposSelecionados.clientes.includes("nome") && <TableCell>{cliente.nome}</TableCell>}
+                        {camposSelecionados.clientes.includes("compras") && (
+                          <TableCell className="text-center">{cliente.compras}</TableCell>
+                        )}
+                        {camposSelecionados.clientes.includes("valor") && (
+                          <TableCell className="text-right">R$ {cliente.valor.toFixed(2)}</TableCell>
+                        )}
+                        {camposSelecionados.clientes.includes("media") && (
+                          <TableCell className="text-right">R$ {cliente.media.toFixed(2)}</TableCell>
+                        )}
                       </TableRow>
                     ))}
                 </TableBody>
